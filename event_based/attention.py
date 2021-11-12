@@ -68,8 +68,8 @@ class ScaledDotProductAttention(nn.Module):
             #print('sparse attn shape 1', sparse_attn.shape)
             #sga = Sparse_grad_attention(2)
             if self.grad_sparse:
-                sga = Sparse_grad_attention(self.topk)
-                sparse_attn = sga(sparse_attn)
+                sga = Sparse_grad_attention.apply
+                sparse_attn = sga(sparse_attn, self.topk)
             else:
                 sparse_attn = self.sa(sparse_attn)
             sparse_attn = sparse_attn.reshape((mb,ins,outs))
@@ -267,8 +267,8 @@ class AlphaAttention(ScaledDotProductAttention):
             #print('sparse attn shape 1', sparse_attn.shape)
             #sga = Sparse_grad_attention(2)
             if self.grad_sparse:
-                sga = Sparse_grad_attention(self.topk)
-                sparse_attn = sga(sparse_attn)
+                sga = Sparse_grad_attention.apply
+                sparse_attn = sga(sparse_attn, self.topk)
             else:
                 sparse_attn = self.sa(sparse_attn)
             sparse_attn = sparse_attn.reshape((mb,ins,outs))

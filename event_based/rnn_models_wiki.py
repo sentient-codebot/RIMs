@@ -122,13 +122,13 @@ class RNNModel(nn.Module):
                     if idx_layer < self.nlayers - 1:
                         if self.use_inactive:
                             if self.blocked_grad:
-                                bg = blocked_grad()
+                                bg = blocked_grad.apply
                                 output.append(bg(hx,mask))
                             else:
                                 output.append(hx)
                         else:
                             if self.blocked_grad:
-                                bg = blocked_grad()
+                                bg = blocked_grad.apply
                                 output.append((mask)*bg(hx,mask))
                             else:
                                 output.append((mask)*hx)
