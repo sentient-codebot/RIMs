@@ -235,6 +235,51 @@ class PositionwiseFeedForward(nn.Module):
         return output
 
 
+class AlphaAttention(ScaledDotProductAttention):
+    ''' modified input attention '''
+
+    def __init__(self, temperature, topk, grad_sparse, attn_dropout=0.1):
+        super().__init__(temperature, topk, grad_sparse, attn_dropout=0.1)
+    
+    def forward(self, q, k, v, alpha, mask=None): # what is this mask?
+        '''alpha being a K-dim vector'''
+
+        attn = torch.bmm(q, k.transpose(1, 2))
+        attn = attn / self.temperature
+
+        if mask is not None:
+            attn = attn.masked_fill(mask, -np.inf)
+
+        attn = self.softmax(attn)
+        fixed_attn = torch.zeros_like(attn)
+        fixed_attn[:,:,0:-1] = attn[:,:,0:-1] * alpha.reshape(1,-1,1)
+        fixed_attn[:,:,-1] = 1 - (1-attn[:,:,-1])*alpha.reshape(1,-1)
+
+        attn = fixed_attn
+
+        extra_loss = 0.0
+
+        use_sparse = True#False
+
+        if use_sparse:
+            mb, ins, outs = attn.shape[0], attn.shape[1], attn.shape[2]
+            sparse_attn = attn.reshape((mb*ins, outs))
+            #print('sparse attn shape 1', sparse_attn.shape)
+            #sga = Sparse_grad_attention(2)
+            if self.grad_sparse:
+                sga = Sparse_grad_attention(self.topk)
+                sparse_attn = sga(sparse_attn)
+            else:
+                sparse_attn = self.sa(sparse_attn)
+            sparse_attn = sparse_attn.reshape((mb,ins,outs))
+            attn = sparse_attn*1.0
+
+        output = torch.bmm(attn, v)
+
+        return output, attn, extra_loss
+
+
+
 if __name__ == "__main__":
 
     x = torch.randn((64,3,100))
