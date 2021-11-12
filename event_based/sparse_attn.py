@@ -8,15 +8,20 @@ class Sparse_attention(nn.Module):
         top_k += 1
         self.top_k = top_k
 
-    def forward(self, attn_s):
+    def forward(self, attn_s, alpha=1, threshold=0.05):
+        '''
+        attn_s (BATCHSIZE, K) ??????
+        or attn_s (2, K) ??????
+        '''
 
-        # normalize the attention weights using piece-wise Linear function
-        # only top k should
         attn_plot = []
-        # torch.max() returns both value and location
-        #attn_s_max = torch.max(attn_s, dim = 1)[0]
-        #attn_w = torch.clamp(attn_s_max, min = 0, max = attn_s_max)
         eps = 10e-8
+        # alpha = torch.clamp(alpha, min=0, max=1) # 
+
+        # fixed_s = torch.zeros_like(attn_s)
+        # fixed_s[:,:,0:-1] = attn_s[:,:,0:-1] * alpha.reshape(1,-1,1)
+        # fixed_s[:,:,-1] = 1 - torch.sum(attn_s[:,:,0:-1]) * alpha.reshape(1,-1)
+
         time_step = attn_s.size()[1]
         if time_step <= self.top_k:
             # just make everything greater than 0, and return it
